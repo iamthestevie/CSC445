@@ -1,11 +1,11 @@
-objects = test.o
+objects = lp.o
 
-test : $(objects)
-	g++ -Wall -std=c++17 -o test test.o
+lp : $(objects)
+	g++ -Wall -std=c++17 -o lp lp.o
 
-test.o : test.cpp
-	g++ -Wall -std=c++17 -c test.cpp
+lp.o : lp.cpp
+	g++ -Wall -std=c++17 -c lp.cpp
 
 .PHONY : clean
 clean :
-	rm test $(objects)
+	rm lp $(objects)
