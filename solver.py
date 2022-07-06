@@ -2,6 +2,67 @@ import sys
 import numpy as np
 from scipy.optimize import linprog
 
+###############################################
+### Class: Linear Program ###
+###############################################
+
+class Linear_Program:
+    def __init__(self, A, b, c):
+        """
+        Function description:
+
+        Input:
+            A:
+            B:
+            C:
+        -------------
+        Output:
+        """
+        self.A = A
+        self.b = b
+        self.c = c
+
+        # TODO: transform it in the tableu form
+
+
+    def pivot_position(self):
+        """
+        returns the pivot solution
+        """
+
+        
+    def pivot_step(self, pivot_position):
+
+
+
+    # def can_be_improved():
+        """
+        Returns a boolean variable regarding whether it can be improved or not?
+        """
+
+        # Is the dictionary initially feasible?
+
+    def is_initially_feasible(self):
+        for val in self.b > 0:
+            print(val)
+
+
+    def solve(self):
+        """
+        Solves the linear program
+        """
+
+        # TODO: consider if it is initially feasible, if not, do more work
+
+        # TODO: consider the unbounded scenario
+        self.is_initially_feasible()
+
+        # while self.can_be_improved():
+        #     pivot_position = self.pivot_position()
+        #     self.pivot_step(pivot_position)
+
+        # TODO: return the result in your desired way, or store it in a class variable for users to retrieve. 
+
 
 ###############################################
 ### Section one: Read in the standard input ###
@@ -14,22 +75,17 @@ TODOS:
    - Maybe these user prompts/instructions shouldn't be added considering the grading schema 
      (if the only thing auto grader wants is to print is the result).
 """
-lp_content = []
-print("Please put in your LP std input. To exit, please press 'q'.")
-print("")
+
+lp_content = []                                     # list to hold data
+
 for line in sys.stdin:
-    if 'q' == line.rstrip():
-        print("You've exited from the input procedure.")
-        break
-    if '' == line.rstrip():
-        print("Blank lines detected, please proceed with legal input or exit from the LP input procedure.")
+    if '' == line.rstrip():                         # skip blank lines
         continue
-    # print current input for debugging purposes
-    print(f'Cur input : {line}')
-    cur_line = [float(e) for e in line.split()]
-    lp_content.append(cur_line)
-# testing purpose
-print(lp_content)
+    # print(f'Cur input : {line}')                    # print current input for debugging purposes
+    cur_line = [float(e) for e in line.split()]     # split line and cast values into float type
+    lp_content.append(cur_line)                     # append values to our list
+
+# print(lp_content)
 
 
 
@@ -47,16 +103,21 @@ In Python, there are different libraries for linear programming:
    - the exhaustive Pyomo
 """
 
-# Scipy implementation
-# Scipy tries to find the minimum of the objective function
-c = [-e for e in lp_content[0]]
-A = [arr[:-1] for arr in lp_content[1:]]
-b = [arr[-1] for arr in lp_content[1:]]
-print(c)
-print(A)
-print(b)
-res = linprog(c, A_ub = A, b_ub = b)
+c = [e for e in lp_content[0]]                     # coefficients of the objective function
+A = [arr[:-1] for arr in lp_content[1:]]           # constraints
+b = [arr[-1] for arr in lp_content[1:]]            # constants
 
+print(f'Objective function: {c}')
+print(f'Constraints: {A}')
+print(f'Constants: {b}')
+
+
+np_c = np.array(c)
+np_A = np.array(A)
+np_b = np.array(b)
+
+lp = Linear_Program(np_A, np_b, np_c)
+lp.solve()
 
 
 
@@ -65,26 +126,12 @@ res = linprog(c, A_ub = A, b_ub = b)
 ### Section three: output                    ###
 ################################################
 """
-status = res.status
-
-# unbounded
-if status == 2:
-    print("Unbounded")
-# infeasible
-elif status == 3:
-    print("Infeasible")
-else:
-    print('Optimal')
-    print(res.x)
-
-
 
 
 
 ################################################
 ###      SIMPLEX ALGORITHM FROM SCRATCH      ###
 ################################################
-SIMPLEX ALGORITHM FROM SCRATCH
 
 """
 Pseudo code in class exercise:
@@ -109,55 +156,8 @@ After the linear program class is completed, this replaces what we did in step t
 """
 
 
-class Linear_Program:
-    def __init__(self, A, b, c):
-        """
-        Function description:
-
-        Input:
-            A:
-            B:
-            C:
-        -------------
-        Output:
-        """
-        self.A = A
-        self.b = b
-        self.c = c
-
-        # TODO: transform it in the tableu form
 
 
-    def pivot_position():
-        """
-        returns the pivot solution
-        """
-
-
-    def pivot_step(pivot_position):
-
-
-
-    def can_be_improved():
-        """
-        Returns a boolean variable regarding whether it can be improved or not?
-        """
-
-
-    def solve():
-        """
-        Solves the linear program
-        """
-
-        # TODO: consider if it is initially feasible, if not, do more work
-
-        # TODO: consider the unbounded scenario
-
-        while self.can_be_improved():
-            pivot_position = self.pivot_position()
-            self.pivot_step(pivot_position)
-
-        # TODO: return the result in your desired way, or store it in a class variable for users to retrieve. 
 
 
 
