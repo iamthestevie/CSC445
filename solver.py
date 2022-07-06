@@ -7,7 +7,7 @@ from scipy.optimize import linprog
 ###############################################
 
 class Linear_Program:
-    def __init__(self, A, b, c):
+    def __init__(self, lp_content):
         """
         Function description:
 
@@ -18,11 +18,27 @@ class Linear_Program:
         -------------
         Output:
         """
-        self.A = A
-        self.b = b
-        self.c = c
+        self.A = [arr[:-1] for arr in lp_content[1:]]
+        self.b = [arr[-1] for arr in lp_content[1:]]
+        self.c = [e for e in lp_content[0]]
+        self.solution_state = 'optimal'
 
-        # TODO: transform it in the tableu form
+    # TODO: transform it in the tableu form
+    def to_equation_tableu_form(self):    
+        # append to a values for our slack variables
+        for row in range(len(self.A)):
+            self.c.append(0)
+            for column in range(len(self.A)):
+                if row == column:
+                    self.A[row].append(1)
+                else:
+                    self.A[row].append(0)
+        
+        xb = [eq + [x] for eq, x in zip(self.A, self.b)]
+        z = self.c + [0]
+        self.lp_mat = xb + [z]
+        print("#debugging print:", self.lp_mat)             
+
 
 
     def pivot_position(self):
@@ -30,17 +46,22 @@ class Linear_Program:
         returns the pivot solution
         """
 
+
         
     def pivot_step(self, pivot_position):
 
 
 
-    # def can_be_improved():
+    def can_be_improved():
         """
         Returns a boolean variable regarding whether it can be improved or not?
         """
+        for val in lp_mat[-1][:-1]:
+            if val > 0:
+                return True
+        
+        return False
 
-        # Is the dictionary initially feasible?
 
     def is_initially_feasible(self):
         for val in self.b > 0:
@@ -76,92 +97,23 @@ TODOS:
      (if the only thing auto grader wants is to print is the result).
 """
 
-lp_content = []                                     # list to hold data
-
-for line in sys.stdin:
-    if '' == line.rstrip():                         # skip blank lines
-        continue
-    # print(f'Cur input : {line}')                    # print current input for debugging purposes
-    cur_line = [float(e) for e in line.split()]     # split line and cast values into float type
-    lp_content.append(cur_line)                     # append values to our list
-
-# print(lp_content)
-
-
-
-################################################
-### Section two: Solve ###
-################################################
-"""
-In Python, there are different libraries for linear programming:
-   - the multi-purposed SciPy
-      https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.linprog.html
-
-   - the beginner-friendly PuLP
-   https://towardsdatascience.com/how-to-create-your-first-linear-programming-solver-in-python-284e3fe5b811
-   
-   - the exhaustive Pyomo
-"""
-
-c = [e for e in lp_content[0]]                     # coefficients of the objective function
-A = [arr[:-1] for arr in lp_content[1:]]           # constraints
-b = [arr[-1] for arr in lp_content[1:]]            # constants
-
-print(f'Objective function: {c}')
-print(f'Constraints: {A}')
-print(f'Constants: {b}')
+if __name__ == '__main__':
+    lp_content = []
+    for line in sys.stdin:
+        if 'q' == line.rstrip():
+            print("You've exited from the input procedure.")
+            break
+        if '' == line.rstrip():
+            print("Blank lines detected, please proceed with legal input or exit from the LP input procedure.")
+            continue
+        # print current input for debugging purposes
+        cur_line = [float(e) for e in line.split()]
+        lp_content.append(cur_line)
 
 
-np_c = np.array(c)
-np_A = np.array(A)
-np_b = np.array(b)
+    lp = Linear_Program(lp_content)
+    lp.to_equation_tableu_form()
+    # lp.solve()
 
-lp = Linear_Program(np_A, np_b, np_c)
-lp.solve()
-
-
-
-"""
-################################################
-### Section three: output                    ###
-################################################
-"""
-
-
-
-################################################
-###      SIMPLEX ALGORITHM FROM SCRATCH      ###
-################################################
-
-"""
-Pseudo code in class exercise:
-def solve():
-    while can_be_improved():
-        choose varible to enter the basis
-        inspect bounds
-        choose the variable to leave the basis
-        perform pivot
-
-    output results
-"""
-
-
-
-"""
-Start with a class called linear program that takes in the input we got,
-saves it in a reasonable format, and solves it using simplex. 
-More functions may need to be added. 
-Think about independence and abstraction between different functions. 
-After the linear program class is completed, this replaces what we did in step two in the above program. 
-"""
-
-
-
-
-
-
-
-
-
-
-
+    # print(lp.solution_state)
+    # print(lp.result)
