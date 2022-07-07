@@ -53,6 +53,7 @@ class Linear_Program:
                     self.A[row].append(0)
             self.c.append(0)
 
+        
         xb = [eq + [x] for eq, x in zip(self.A, self.b)]
         z = self.c + [0]
         self.lp_mat = xb + [z]
@@ -62,7 +63,7 @@ class Linear_Program:
 
     def pivot_position(self):
         """
-        returns the pivot solution
+        returns the pivot position
         """
         # STEP 1: find the non basic variable that we want to work on
         obj_fun = self.lp_mat[-1]#
@@ -105,10 +106,12 @@ class Linear_Program:
 
 
     def is_initially_feasible(self):
-        for val in self.b > 0:
-            print(val)
+        for eq in self.lp_mat[:-1]:
+            if eq[-1] < 0:
+                return False
+        return True
 
-
+    
     def solve(self):
         """
         """
@@ -116,8 +119,8 @@ class Linear_Program:
         # TODO: think about the while loop we talked about in class
         # TODO: consider different edge cases, like infeasible/unbounaded/
 
-        self.result = # TODO: feel free to change this part depending on your implementation
-        self.solution_state # TODO: feel free to change this part depending on your implementation
+        #self.result = # TODO: feel free to change this part depending on your implementation
+        #self.solution_state # TODO: feel free to change this part depending on your implementation
 
 
 ###############################################
@@ -142,7 +145,7 @@ if __name__ == '__main__':
         lp_content.append(cur_line)
 
     lp = Linear_Program(lp_content)
-    #lp.to_equation_tableu_form()
+    lp.to_equation_tableu_form()
     # lp.solve()
     # print(lp.solution_state)
     # print(lp.result)
