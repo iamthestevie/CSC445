@@ -1,6 +1,6 @@
 import sys
 import numpy as np
-from scipy.optimize import linprog
+import math
 
 ###############################################
 ### Class: Linear Program ###
@@ -11,10 +11,10 @@ class Linear_Program:
         """
         Function description:
 
-        Input:
+        Input: lp_content:
             A:
-            B:
-            C:
+            b:
+            c:
         -------------
         Output:
         """
@@ -23,17 +23,36 @@ class Linear_Program:
         self.c = [e for e in lp_content[0]]
         self.solution_state = 'optimal'
 
-    # TODO: transform it in the tableu form
-    def to_equation_tableu_form(self):    
+
+    def to_equation_tableu_form(self):
+        """
+        Function Description:
+        Adds all the slack variables so that the function 
+        is in the required equation form...
+        
+        z  + (c1)x1   ... (cn)xn (0)w1     ... (0)wm
+        b1 - (a1,1)x1 ... (a1,n)xn - (1)w1 ... (0)wm
+        .
+        .
+        .
+        bm - (am,1)x1 ... (am,n)xn (0)w1 ... (1)wm
+
+        Input: self
+
+        Ouput: None
+
+        """
+        
         # append to a values for our slack variables
-        for row in range(len(self.A)):
-            self.c.append(0)
-            for column in range(len(self.A)):
+        equation_count = len(self.A)
+        for row in range(equation_count):
+            for column in range(equation_count):
                 if row == column:
                     self.A[row].append(1)
                 else:
                     self.A[row].append(0)
-        
+            self.c.append(0)
+
         xb = [eq + [x] for eq, x in zip(self.A, self.b)]
         z = self.c + [0]
         self.lp_mat = xb + [z]
@@ -45,21 +64,43 @@ class Linear_Program:
         """
         returns the pivot solution
         """
+        # STEP 1: find the non basic variable that we want to work on
+        obj_fun = self.lp_mat[-1]#
+        for var_i in range(len(obj_fun[:-1])):
+            if obj_fun[var_i] > 0:
+                break
 
+        # STEP 2: find the most strict boundary for var_i th non basic variable
+        # thought process: 
+            # go through all the euqations (rows of the matrix) row by row
+                # calculate and then store the constraint
+            # find the smallest constraint and return the var_i, and the row of the constraint (pivot position)
 
+        # return var_i, row of the tightest constraint
         
     def pivot_step(self, pivot_position):
+        """
+        
+        """
+        # TODO: construct a new tableau of all the entries updated with the entering variable
+        # tip:
+            # Think about the below example that we talked about in class.
+            # say that we will be wiping out x2, then the coefficient of x1 will be 1.5 + 4 * 1.5
+            # x1    x2    x3   x4   x5    x6      b
+            # 1.5     4     1     0    0     0   =  4   
+            # 4     2     0     1    0     0   =  5
+       
+        self.lp_mat = new_tableau
 
 
 
-    def can_be_improved():
+    def can_be_improved(self):
         """
         Returns a boolean variable regarding whether it can be improved or not?
         """
-        for val in lp_mat[-1][:-1]:
-            if val > 0:
+        for num in self.lp_mat[-1][:-1]:
+            if num > 0:
                 return True
-        
         return False
 
 
@@ -70,19 +111,13 @@ class Linear_Program:
 
     def solve(self):
         """
-        Solves the linear program
         """
+        self.to_equation_tableu_form()
+        # TODO: think about the while loop we talked about in class
+        # TODO: consider different edge cases, like infeasible/unbounaded/
 
-        # TODO: consider if it is initially feasible, if not, do more work
-
-        # TODO: consider the unbounded scenario
-        self.is_initially_feasible()
-
-        # while self.can_be_improved():
-        #     pivot_position = self.pivot_position()
-        #     self.pivot_step(pivot_position)
-
-        # TODO: return the result in your desired way, or store it in a class variable for users to retrieve. 
+        self.result = # TODO: feel free to change this part depending on your implementation
+        self.solution_state # TODO: feel free to change this part depending on your implementation
 
 
 ###############################################
@@ -100,20 +135,14 @@ TODOS:
 if __name__ == '__main__':
     lp_content = []
     for line in sys.stdin:
-        if 'q' == line.rstrip():
-            print("You've exited from the input procedure.")
-            break
         if '' == line.rstrip():
-            print("Blank lines detected, please proceed with legal input or exit from the LP input procedure.")
             continue
         # print current input for debugging purposes
         cur_line = [float(e) for e in line.split()]
         lp_content.append(cur_line)
 
-
     lp = Linear_Program(lp_content)
-    lp.to_equation_tableu_form()
+    #lp.to_equation_tableu_form()
     # lp.solve()
-
     # print(lp.solution_state)
     # print(lp.result)
