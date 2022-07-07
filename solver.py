@@ -57,7 +57,7 @@ class Linear_Program:
         xb = [eq + [x] for eq, x in zip(self.A, self.b)]
         z = self.c + [0]
         self.lp_mat = xb + [z]
-        print("#debugging print:", self.lp_mat)             
+        print("#debugging print:", self.lp_mat)            
 
 
 
@@ -66,18 +66,39 @@ class Linear_Program:
         returns the pivot position
         """
         # STEP 1: find the non basic variable that we want to work on
-        obj_fun = self.lp_mat[-1]#
-        for var_i in range(len(obj_fun[:-1])):
-            if obj_fun[var_i] > 0:
+        obj_fun = self.lp_mat[-1]
+        for entering_i in range(len(obj_fun[:-1])):
+            if obj_fun[entering_i] > 0:
                 break
 
-        # STEP 2: find the most strict boundary for var_i th non basic variable
+        # STEP 2: find the most strict boundary for entering_i the non basic variable
         # thought process: 
-            # go through all the euqations (rows of the matrix) row by row
+            # go through all the equations (rows of the matrix) row by row
                 # calculate and then store the constraint
-            # find the smallest constraint and return the var_i, and the row of the constraint (pivot position)
+            # find the smallest constraint and return the entering_i, and the row of the constraint (pivot position)
+        bounds = []
+        basis_length = len(self.lp_mat[:-1])
+        for basis_eq in range(basis_length):
+            coefficient = self.lp_mat[basis_eq][entering_i]
+            constant = self.lp_mat[basis_eq][-1]
+            # if the coefficient is greater than zero (negative in the basis)
+            if coefficient > 0:
+                bounds.append(constant / coefficient)
+            # if the coefficient is negative (positive in the basis), or zero
+            # then variable places no bounds on the incoming variable, 
+            # or is not in that equation in the basis.
+            # for now we handle this case with float('inf')
+            else:
+                bounds.append(float('inf'))
+            print(bounds)
 
-        # return var_i, row of the tightest constraint
+
+        leaving_i = bounds.index(min(bounds))
+        
+        # return: 
+        #           entering_i - the index of objective variable to enter the basis, 
+        #           leaving_i  - the index of the basic variable to leave the basis.
+        return entering_i, leaving_i
         
     def pivot_step(self, pivot_position):
         """
@@ -146,6 +167,7 @@ if __name__ == '__main__':
 
     lp = Linear_Program(lp_content)
     lp.to_equation_tableu_form()
+    lp.pivot_position()
     # lp.solve()
     # print(lp.solution_state)
     # print(lp.result)
