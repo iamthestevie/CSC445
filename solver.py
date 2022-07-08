@@ -63,8 +63,8 @@ class Linear_Program:
         z = self.c + [0]
         self.lp_mat = xb + [z]
         self.np_lp_mat = np.array(self.lp_mat)
-        print("#debugging print - lp_mat:", self.lp_mat)
-        print("#debugging print - np_lp_mat:", self.np_lp_mat)
+        # print("#debugging print - lp_mat:", self.lp_mat)
+        # print("#debugging print - np_lp_mat:", self.np_lp_mat)
 
 
 
@@ -74,7 +74,7 @@ class Linear_Program:
         returns the pivot position
         """
         # STEP 1: find the non basic variable that we want to work on
-        obj_fun = self.lp_mat[-1]
+        obj_fun = self.np_lp_mat[-1]
         for entering_i in range(len(obj_fun[:-1])):
             if obj_fun[entering_i] > 0:
                 break
@@ -85,10 +85,10 @@ class Linear_Program:
                 # calculate and then store the constraint
             # find the smallest constraint and return the entering_i, and the row of the constraint (pivot position)
         bounds = []
-        basis_length = len(self.lp_mat[:-1])
+        basis_length = len(self.np_lp_mat[:-1])
         for basis_eq in range(basis_length):
-            coefficient = self.lp_mat[basis_eq][entering_i]
-            constant = self.lp_mat[basis_eq][-1]
+            coefficient = self.np_lp_mat[basis_eq][entering_i]
+            constant = self.np_lp_mat[basis_eq][-1]
             # if the coefficient is less than zero
             if coefficient < 0:
                 bounds.append(constant / -coefficient)
@@ -98,7 +98,7 @@ class Linear_Program:
             # for now we handle this case with float('inf')
             else:
                 bounds.append(float('inf'))
-            print(bounds)
+            # print(bounds)
 
 
         leaving_i = bounds.index(min(bounds))
@@ -135,23 +135,16 @@ class Linear_Program:
                 # zero out the coefficient of the variable that is entering the basis
                 self.np_lp_mat[row][entering] = 0
 
-        
-
-
-                    
-                    
-
-
         #print(entering, leaving)
         #self.lp_mat = new_tableau
 
-
+      
 
     def can_be_improved(self):
         """
         Returns a boolean variable regarding whether it can be improved or not?
         """
-        for num in self.lp_mat[-1][:-1]:
+        for num in self.np_lp_mat[-1][:-1]:
             if num > 0:
                 return True
         return False
@@ -168,10 +161,17 @@ class Linear_Program:
         """
         """
         self.to_equation_tableu_form()
-        entering, leaving = lp.pivot_position()
-        lp.pivot_step(entering, leaving)
-        print(lp.np_lp_mat)
+        
         # TODO: think about the while loop we talked about in class
+        pivot = 1
+        while self.can_be_improved():
+            print(f"Pivot: {pivot}")
+            entering, leaving = self.pivot_position()
+            print(f"entering: {entering}, leaving: {leaving}")
+            self.pivot_step(entering, leaving)
+            print(self.np_lp_mat)
+            pivot += 1
+
         # TODO: consider different edge cases, like infeasible/unbounaded/
 
         #self.result = # TODO: feel free to change this part depending on your implementation
