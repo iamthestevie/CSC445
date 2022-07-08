@@ -42,13 +42,18 @@ class Linear_Program:
         Ouput: None
 
         """
+
+        # reverse the sign of all A variables
+        for row in range(len(self.A)):
+            for column in range(len(self.A[row])):
+                self.A[row][column] = -self.A[row][column]
         
         # append to a values for our slack variables
         equation_count = len(self.A)
         for row in range(equation_count):
             for column in range(equation_count):
                 if row == column:
-                    self.A[row].append(1)
+                    self.A[row].append(-1)
                 else:
                     self.A[row].append(0)
             self.c.append(0)
@@ -57,7 +62,10 @@ class Linear_Program:
         xb = [eq + [x] for eq, x in zip(self.A, self.b)]
         z = self.c + [0]
         self.lp_mat = xb + [z]
-        print("#debugging print:", self.lp_mat)            
+        self.np_lp_mat = np.array(self.lp_mat)
+        print("#debugging print - lp_mat:", self.lp_mat)
+        print("#debugging print - np_lp_mat:", self.np_lp_mat)
+
 
 
 
@@ -81,10 +89,10 @@ class Linear_Program:
         for basis_eq in range(basis_length):
             coefficient = self.lp_mat[basis_eq][entering_i]
             constant = self.lp_mat[basis_eq][-1]
-            # if the coefficient is greater than zero (negative in the basis)
-            if coefficient > 0:
-                bounds.append(constant / coefficient)
-            # if the coefficient is negative (positive in the basis), or zero
+            # if the coefficient is less than zero
+            if coefficient < 0:
+                bounds.append(constant / -coefficient)
+            # if the coefficient is negative, or zero
             # then variable places no bounds on the incoming variable, 
             # or is not in that equation in the basis.
             # for now we handle this case with float('inf')
@@ -100,7 +108,7 @@ class Linear_Program:
         #           leaving_i  - the index of the basic variable to leave the basis.
         return entering_i, leaving_i
         
-    def pivot_step(self, pivot_position):
+    def pivot_step(self, entering, leaving):
         """
         
         """
@@ -108,11 +116,34 @@ class Linear_Program:
         # tip:
             # Think about the below example that we talked about in class.
             # say that we will be wiping out x2, then the coefficient of x1 will be 1.5 + 4 * 1.5
-            # x1    x2    x3   x4   x5    x6      b
-            # 1.5     4     1     0    0     0   =  4   
-            # 4     2     0     1    0     0   =  5
-       
-        self.lp_mat = new_tableau
+            # x1    x2      x3      x4      x5      x6      b
+            # 1.5   4       1       0       0       0   =   4   
+            # 4     2       0       1       0       0   =   5
+
+        # Step 1:   Zero out the variable at index 'entering' from basis equation at 'leaving'
+        #           we will use this equation to change all other equations in the tableu
+        self.np_lp_mat[leaving][entering] = 0
+
+        # Step 2:   All remaning basic and non basic rows will be equal to the following:
+        #           row = row + (coefficient of entering)*[row of leaving]
+        for row in range(len(self.np_lp_mat)):
+            if row == leaving:
+                continue
+            else:
+                self.np_lp_mat[row] += (self.np_lp_mat[row][entering] * self.np_lp_mat[leaving])
+                
+                # zero out the coefficient of the variable that is entering the basis
+                self.np_lp_mat[row][entering] = 0
+
+        
+
+
+                    
+                    
+
+
+        #print(entering, leaving)
+        #self.lp_mat = new_tableau
 
 
 
@@ -137,6 +168,9 @@ class Linear_Program:
         """
         """
         self.to_equation_tableu_form()
+        entering, leaving = lp.pivot_position()
+        lp.pivot_step(entering, leaving)
+        print(lp.np_lp_mat)
         # TODO: think about the while loop we talked about in class
         # TODO: consider different edge cases, like infeasible/unbounaded/
 
@@ -166,8 +200,6 @@ if __name__ == '__main__':
         lp_content.append(cur_line)
 
     lp = Linear_Program(lp_content)
-    lp.to_equation_tableu_form()
-    lp.pivot_position()
-    # lp.solve()
+    lp.solve()
     # print(lp.solution_state)
     # print(lp.result)
