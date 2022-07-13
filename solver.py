@@ -35,7 +35,7 @@ class Linear_Program:
         .
         .
         .
-        bm - (am,1)x1 ... (am,n)xn (0)w1 ... (1)wm
+        bm - (am,1)x1 ... (am,n)xn - (0)w1 ... (1)wm
 
         Input: self
 
@@ -43,17 +43,12 @@ class Linear_Program:
 
         """
 
-        # reverse the sign of all A variables
-        for row in range(len(self.A)):
-            for column in range(len(self.A[row])):
-                self.A[row][column] = -self.A[row][column]
-        
-        # append to a values for our slack variables
+        # append to A values for our slack variables
         equation_count = len(self.A)
         for row in range(equation_count):
             for column in range(equation_count):
                 if row == column:
-                    self.A[row].append(-1)
+                    self.A[row].append(1)
                 else:
                     self.A[row].append(0)
             self.c.append(0)
@@ -61,20 +56,17 @@ class Linear_Program:
         
         xb = [eq + [x] for eq, x in zip(self.A, self.b)]
         z = self.c + [0]
-        self.lp_mat = xb + [z]
-        self.np_lp_mat = np.array(self.lp_mat)
-        # print("#debugging print - lp_mat:", self.lp_mat)
-        # print("#debugging print - np_lp_mat:", self.np_lp_mat)
+        lp_mat = xb + [z]
+        print("LINE 60: debugging print - lp_mat:", lp_mat)
+        return lp_mat
 
 
-
-
-    def pivot_position(self):
+    def pivot_position(self, lp_mat):
         """
         returns the pivot position
         """
         # STEP 1: find the non basic variable that we want to work on
-        obj_fun = self.np_lp_mat[-1]
+        obj_fun = lp_mat[-1]
         for entering_i in range(len(obj_fun[:-1])):
             if obj_fun[entering_i] > 0:
                 break
@@ -85,97 +77,95 @@ class Linear_Program:
                 # calculate and then store the constraint
             # find the smallest constraint and return the entering_i, and the row of the constraint (pivot position)
         bounds = []
-        basis_length = len(self.np_lp_mat[:-1])
-        for basis_eq in range(basis_length):
-            coefficient = self.np_lp_mat[basis_eq][entering_i]
-            constant = self.np_lp_mat[basis_eq][-1]
-            # if the coefficient is less than zero
-            if coefficient < 0:
-                bounds.append(constant / -coefficient)
-            # if the coefficient is negative, or zero
-            # then variable places no bounds on the incoming variable, 
-            # or is not in that equation in the basis.
-            # for now we handle this case with float('inf')
-            else:
-                bounds.append(float('inf'))
-            # print(bounds)
+        for basis_eq in self.lp_mat[:-1]:
+            coefficient = eq[entering_i]
+            bounds.append(math.inf if coefficient <= 0 else eq[-1] / coefficient)
 
+        if min(bounds) is math.inf:
+            self.solution_state = "unbounded"
 
-        leaving_i = bounds.index(min(bounds))
+        leaving_i = restrictions.index(min(restrictions))
         
+        print("#debugging print: current pivot position is", leaving_i, entering_i)
+
         # return: 
-        #           entering_i - the index of objective variable to enter the basis, 
         #           leaving_i  - the index of the basic variable to leave the basis.
-        return entering_i, leaving_i
+        #           entering_i - the index of objective variable to enter the basis, 
+        return leaving_i, entering_i
         
-    def pivot_step(self, entering, leaving):
-        """
+
+    def pivot_step(self, pivot_position, lp_mat):
+        new_tableau = [[] for i in range(len(self.lp_mat))]
         
-        """
-        # TODO: construct a new tableau of all the entries updated with the entering variable
-        # tip:
-            # Think about the below example that we talked about in class.
-            # say that we will be wiping out x2, then the coefficient of x1 will be 1.5 + 4 * 1.5
-            # x1    x2      x3      x4      x5      x6      b
-            # 1.5   4       1       0       0       0   =   4   
-            # 4     2       0       1       0       0   =   5
+        i, j = pivot_position
+        new_tableau[i] = np.array(self.lp_mat[i]) / self.lp_mat[i][j] # we want our exiting varaible to have coefficient of 1
+        
+        for row, eq in enumerate(self.lp_mat):
+            if row != i:
+                multiplier_row = np.array(new_tableau[i]) * self.lp_mat[row][j]
+                new_tableau[row] = np.array(self.lp_mat[row]) - multiplier_row # matrix row manipulation
+       
+        return new_tableau
 
-        # Step 1:   Zero out the variable at index 'entering' from basis equation at 'leaving'
-        #           we will use this equation to change all other equations in the tableu
-        self.np_lp_mat[leaving][entering] = 0
+    def is_pivot(self, column):
+        return sum(column) == 1 and len([c for c in column if c == 0]) == len(column) -1
 
-        # Step 2:   All remaning basic and non basic rows will be equal to the following:
-        #           row = row + (coefficient of entering)*[row of leaving]
-        for row in range(len(self.np_lp_mat)):
-            if row == leaving:
-                continue
-            else:
-                self.np_lp_mat[row] += (self.np_lp_mat[row][entering] * self.np_lp_mat[leaving])
-                
-                # zero out the coefficient of the variable that is entering the basis
-                self.np_lp_mat[row][entering] = 0
+    def get_solution(self, lp_mat):
+        lp_mat_columns = np.array(lp_mat).T
 
-        #print(entering, leaving)
-        #self.lp_mat = new_tableau
+        self.result = []
+        for column in lp_mat_columns[:-1]:
+            solution = 0
+            if self.is_pivot(column):
+                one_index = column.tolist().index(1)
+                solution = lp_mat_columns[-1][one_index]
+            self.result.append(solution)
 
-      
 
-    def can_be_improved(self):
+    def can_be_improved(self, lp_mat):
         """
         Returns a boolean variable regarding whether it can be improved or not?
         """
-        for num in self.np_lp_mat[-1][:-1]:
+        for num in lp_mat[-1][:-1]:
             if num > 0:
                 return True
         return False
 
 
-    def is_initially_feasible(self):
-        for eq in self.lp_mat[:-1]:
-            if eq[-1] < 0:
-                return False
-        return True
-
-    
     def solve(self):
         """
+        Solves the linear program in the following procedure:
+        1. to equation tableu form
+        2. TODO: consider if it is initially feasible, if not, do more work
+        3. TODO: consider the unbounded scenario
         """
-        self.to_equation_tableu_form()
-        
-        # TODO: think about the while loop we talked about in class
-        pivot = 1
-        while self.can_be_improved():
-            print(f"Pivot: {pivot}")
-            entering, leaving = self.pivot_position()
-            print(f"entering: {entering}, leaving: {leaving}")
-            self.pivot_step(entering, leaving)
-            print(self.np_lp_mat)
-            pivot += 1
+        lp_tableu = self.to_equation_tableu_form()
+   
+        # check objective function
+        #   if it has no positive coefficients or,
+        #   it has negative basic variables
+        if not self.can_be_improved(lp_tableu) or any(self.b) < 0:
+            # then solve the auxiliary form
+            auxiliary_solution = self.solve_auxiliary(lp_tableu)
 
-        # TODO: consider different edge cases, like infeasible/unbounaded/
 
-        #self.result = # TODO: feel free to change this part depending on your implementation
-        #self.solution_state # TODO: feel free to change this part depending on your implementation
+
+
+        # check if it is feasible
+        if auxiliary_solution == 0:
+            lp_tableu = self.to_equation_tableu_form()
+
+            while self.can_be_improved(lp_tableu) and self.solution_state == "optimal":
+                pivot_position = self.pivot_position(lp_tableu)
+                if self.solution_state != "optimal":
+                    break
+                lp_tableu = self.pivot_step(pivot_position, lp_tableu)
+
+            self.result = lp_tableu[-1][-1]
+            self.get_solution(lp_tableu)
+
+        else:
+            self.solution_state = 'infeasible'
 
 
 ###############################################
@@ -193,7 +183,7 @@ TODOS:
 if __name__ == '__main__':
     lp_content = []
     for line in sys.stdin:
-        if '' == line.rstrip():
+        if '' == line.rstrip(): # skip blank lines
             continue
         # print current input for debugging purposes
         cur_line = [float(e) for e in line.split()]
@@ -201,5 +191,8 @@ if __name__ == '__main__':
 
     lp = Linear_Program(lp_content)
     lp.solve()
+
     # print(lp.solution_state)
-    # print(lp.result)
+    # if lp.solution_state == 'optimal':
+    #     print(lp.result)
+    #     print(lp.solution)
