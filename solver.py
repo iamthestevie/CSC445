@@ -77,16 +77,16 @@ class Linear_Program:
                 # calculate and then store the constraint
             # find the smallest constraint and return the entering_i, and the row of the constraint (pivot position)
         bounds = []
-        for basis_eq in self.lp_mat[:-1]:
+        for eq in self.lp_mat[:-1]:
             coefficient = eq[entering_i]
             bounds.append(math.inf if coefficient <= 0 else eq[-1] / coefficient)
 
         if min(bounds) is math.inf:
             self.solution_state = "unbounded"
 
-        leaving_i = restrictions.index(min(restrictions))
+        leaving_i = bounds.index(min(bounds))
         
-        print("#debugging print: current pivot position is", leaving_i, entering_i)
+        print("#LINE 89: debugging print: current pivot position is", leaving_i, entering_i)
 
         # return: 
         #           leaving_i  - the index of the basic variable to leave the basis.
@@ -95,20 +95,22 @@ class Linear_Program:
         
 
     def pivot_step(self, pivot_position, lp_mat):
-        new_tableau = [[] for i in range(len(self.lp_mat))]
+        new_tableau = [[] for i in range(len(lp_mat))]
         
         i, j = pivot_position
-        new_tableau[i] = np.array(self.lp_mat[i]) / self.lp_mat[i][j] # we want our exiting varaible to have coefficient of 1
+        new_tableau[i] = np.array(lp_mat[i]) / lp_mat[i][j] # we want our exiting varaible to have coefficient of 1
         
-        for row, eq in enumerate(self.lp_mat):
+        for row, eq in enumerate(lp_mat):
             if row != i:
-                multiplier_row = np.array(new_tableau[i]) * self.lp_mat[row][j]
-                new_tableau[row] = np.array(self.lp_mat[row]) - multiplier_row # matrix row manipulation
+                multiplier_row = np.array(new_tableau[i]) * lp_mat[row][j]
+                new_tableau[row] = np.array(lp_mat[row]) - multiplier_row # matrix row manipulation
        
         return new_tableau
 
+
     def is_pivot(self, column):
         return sum(column) == 1 and len([c for c in column if c == 0]) == len(column) -1
+
 
     def get_solution(self, lp_mat):
         lp_mat_columns = np.array(lp_mat).T
@@ -131,6 +133,49 @@ class Linear_Program:
                 return True
         return False
 
+    def solve_auxiliary(self, lp_mat):
+        """
+        """
+        # Step 1:   
+        #   need to append a column into our lp_mat to hold the variable omega
+        #   this should be inserted at the second to last index (before the constant)
+        auxiliary_tableau = [[] for i in range(len(lp_mat))]
+        
+        for row, eq in enumerate(lp_mat):
+            auxiliary_tableau[row] = eq
+            auxiliary_tableau[row].insert(-1, -1)
+
+        # Step 2:
+        #   replace the objective function with objective value (minus) omega
+        #   we can't discard the old objective function since we'll need it,
+        #   however it is saved as part of the linear_program class as self.c
+
+        # aux_objective_function = [0 for i in lp_mat[-1]]
+        # aux_objective_function.insert(-1, -1)
+        # auxiliary_tableau[-1] = aux_objective_function
+
+        print(f"LINE 170: debugging print - auxiliary_tableau: {auxiliary_tableau}")
+
+        # Step 3:
+        #   pivot omega into the basis
+        #   need to create a new pivot_position function (or do we?) to do this since
+        #   we no longer need to determine the variable to enter the basis.
+        entering_i = len(auxiliary_tableau[-1]) - 2
+        leaving_i = self.b.index(min(self.b))
+        pivot_position = (leaving_i, entering_i)
+
+        print(self.pivot_step(pivot_position, auxiliary_tableau))
+
+
+
+        # while self.can_be_improved(lp_tableu) and self.solution_state == "optimal":
+        #         pivot_position = self.pivot_position(lp_tableu)
+        #         if self.solution_state != "optimal":
+        #             break
+        #         lp_tableu = self.pivot_step(pivot_position, lp_tableu)
+
+
+
 
     def solve(self):
         """
@@ -144,7 +189,8 @@ class Linear_Program:
         # check objective function
         #   if it has no positive coefficients or,
         #   it has negative basic variables
-        if not self.can_be_improved(lp_tableu) or any(self.b) < 0:
+        #   sum(n < 0 for n in nums)
+        if not self.can_be_improved(lp_tableu) or sum(n < 0 for n in self.b) > 0:
             # then solve the auxiliary form
             auxiliary_solution = self.solve_auxiliary(lp_tableu)
 
