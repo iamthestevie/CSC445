@@ -22,6 +22,7 @@ class Linear_Program:
         self.b = [arr[-1] for arr in lp_content[1:]]
         self.c = [e for e in lp_content[0]]
         self.solution_state = 'optimal'
+        self.aux_solution_state = 'infeasible'
 
 
     def to_equation_tableu_form(self):
@@ -61,7 +62,7 @@ class Linear_Program:
         return lp_mat
 
 
-    def pivot_position(self, lp_mat):
+    def pivot_position(self, lp_mat, aux=False):
         """
         returns the pivot position
         """
@@ -77,16 +78,19 @@ class Linear_Program:
                 # calculate and then store the constraint
             # find the smallest constraint and return the entering_i, and the row of the constraint (pivot position)
         bounds = []
-        for eq in self.lp_mat[:-1]:
+        for eq in lp_mat[:-1]:
             coefficient = eq[entering_i]
             bounds.append(math.inf if coefficient <= 0 else eq[-1] / coefficient)
 
         if min(bounds) is math.inf:
-            self.solution_state = "unbounded"
+            if aux == False:
+                self.solution_state = "unbounded"
+            else:
+                self.aux_solution_state = "unbounded"
 
         leaving_i = bounds.index(min(bounds))
         
-        print("#LINE 89: debugging print: current pivot position is", leaving_i, entering_i)
+        print("#LINE 92: debugging print: current pivot position is", leaving_i, entering_i)
 
         # return: 
         #           leaving_i  - the index of the basic variable to leave the basis.
@@ -137,22 +141,27 @@ class Linear_Program:
         """
         """
         # Step 1:   
-        #   need to append a column into our lp_mat to hold the variable omega
-        #   this should be inserted at the second to last index (before the constant)
-        auxiliary_tableau = [[] for i in range(len(lp_mat))]
+        #   create a new aux tableau that will hold all the equations of our old
+        #   tableu with one new varible for omega inserged right before the constant
+        #   in the second to last index, and our new objective value
         
-        for row, eq in enumerate(lp_mat):
-            auxiliary_tableau[row] = eq
-            auxiliary_tableau[row].insert(-1, -1)
+        auxiliary_tableau = [[] for i in range(len(lp_mat))]
 
         # Step 2:
         #   replace the objective function with objective value (minus) omega
         #   we can't discard the old objective function since we'll need it,
         #   however it is saved as part of the linear_program class as self.c
+        #   we also need some attribute to track the state of the auxiliary objective value
 
-        # aux_objective_function = [0 for i in lp_mat[-1]]
-        # aux_objective_function.insert(-1, -1)
-        # auxiliary_tableau[-1] = aux_objective_function
+        aux_objective_function = [0 for i in lp_mat[-1]]
+        aux_objective_function.insert(-1, -1)
+        auxiliary_tableau[-1] = aux_objective_function
+        
+        for row, eq in enumerate(lp_mat[:-1]):
+            auxiliary_tableau[row] = eq
+            auxiliary_tableau[row].insert(-1, -1)
+
+        self.aux_solution_state == "infeasible"
 
         print(f"LINE 170: debugging print - auxiliary_tableau: {auxiliary_tableau}")
 
@@ -160,19 +169,36 @@ class Linear_Program:
         #   pivot omega into the basis
         #   need to create a new pivot_position function (or do we?) to do this since
         #   we no longer need to determine the variable to enter the basis.
-        entering_i = len(auxiliary_tableau[-1]) - 2
-        leaving_i = self.b.index(min(self.b))
+        entering_i = len(auxiliary_tableau[-1]) - 2     # index of omega
+        leaving_i = self.b.index(min(self.b))           # index of the 'most negative' basis variable
         pivot_position = (leaving_i, entering_i)
 
-        print(self.pivot_step(pivot_position, auxiliary_tableau))
+        omega_in_basis_tableau = self.pivot_step(pivot_position, auxiliary_tableau)
 
+        # Step 4:
+        #   we now have an initially feasible tableu.
+        #   we can use the aux_pivot_step() function to check with the objective value can be optimized
+        #   i.e. can it be made to be zero so that our original LP has an initially feasible point
+        #   that we can then use to solve it.
 
+        while self.can_be_improved(omega_in_basis_tableau) and self.aux_solution_state == "infeasible":
+                pivot_position = self.pivot_position(omega_in_basis_tableau, True)
+                if self.aux_solution_state != "infeasible":
+                    break
+                omega_in_basis_tableau = self.pivot_step(pivot_position, omega_in_basis_tableau)
+        
+        # Step 5:
+        #   if the objective value is zero we can convert our aux tableu back to its original
+        #   LP with the basis of the auxiliary tableu.
+        #   otherwise if the objective value is not zero then the original LP is infeasible
+        for eq in omega_in_basis_tableau:
+            print(eq)
 
-        # while self.can_be_improved(lp_tableu) and self.solution_state == "optimal":
-        #         pivot_position = self.pivot_position(lp_tableu)
-        #         if self.solution_state != "optimal":
-        #             break
-        #         lp_tableu = self.pivot_step(pivot_position, lp_tableu)
+        if omega_in_basis_tableau[-1][-1] != 0: # or self.aux_solution_state == "unbounded"
+            return False
+        else:
+            return # aux matrix with objective function converted back into original form.
+
 
 
 
