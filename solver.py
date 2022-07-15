@@ -293,8 +293,10 @@ class Linear_Program:
     def display_result(self):
         print(self.solution_state)
         if self.solution_state == 'optimal':
-            print(self.obj_value)
-            print(self.result)
+            print(-self.obj_value)
+            for index in range(self.lp_n-1):
+                print(self.result[index], end=' ')
+            print()
 
 ###############################################
 ### Section one: Read in the standard input ###
