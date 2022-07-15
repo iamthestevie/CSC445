@@ -60,7 +60,7 @@ class Linear_Program:
         xb = [eq + [x] for eq, x in zip(self.A, self.b)]
         z = self.c + [0]
         lp_mat = xb + [z]
-        #print("LINE 61: debugging print - lp_mat:", lp_mat)
+        # print("LINE 61: debugging print - lp_mat:", lp_mat)
         return lp_mat
 
 
@@ -120,7 +120,7 @@ class Linear_Program:
 
     def get_solution(self, lp_mat):
         lp_mat_columns = np.array(lp_mat).T
-
+        
         self.result = []
         for column in lp_mat_columns[:-1]:
             solution = 0
@@ -232,6 +232,7 @@ class Linear_Program:
                     auxiliary_tableau[-1] += multiplier * new_row
                     break
 
+        auxiliary_tableau[-1][-1] *= -1            
         return auxiliary_tableau
 
 
@@ -256,18 +257,19 @@ class Linear_Program:
             if auxiliary_solution == 0:
                 self.solution_state == 'optimal'
                 lp_tableu = self.convert_aux_original(auxiliary_tableau)
-                print("lp returned from convert_aux: ", lp_tableu)
+                #print("lp returned from convert_aux: ", lp_tableu)
 
                 while self.can_be_improved(lp_tableu) and self.solution_state == "optimal":
                     pivot_position = self.pivot_position(lp_tableu)
                     if self.solution_state != "optimal":
                         break
                     lp_tableu = self.pivot_step(pivot_position, lp_tableu)
+                    
+                    # for row in lp_tableu:
+                    #     print(row)
 
-                for row in lp_tableu:
-                    print(row)
 
-                self.result = lp_tableu[-1][-1]
+                self.obj_value = lp_tableu[-1][-1]
                 self.get_solution(lp_tableu)
 
             else:
@@ -275,21 +277,24 @@ class Linear_Program:
 
         else:
             while self.can_be_improved(lp_tableu) and self.solution_state == "optimal":
+
+                # for row in lp_tableu:
+                #         print(row)
+
                 pivot_position = self.pivot_position(lp_tableu)
                 if self.solution_state != "optimal":
                     break
                 lp_tableu = self.pivot_step(pivot_position, lp_tableu)
 
-            self.result = lp_tableu[-1][-1]
+            self.obj_value = lp_tableu[-1][-1]
             self.get_solution(lp_tableu)
 
-
+    
     def display_result(self):
         print(self.solution_state)
         if self.solution_state == 'optimal':
+            print(self.obj_value)
             print(self.result)
-            # print(self.result)
-
 
 ###############################################
 ### Section one: Read in the standard input ###
