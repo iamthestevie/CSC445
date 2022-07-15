@@ -23,6 +23,8 @@ class Linear_Program:
         self.c = [e for e in lp_content[0]]
         self.solution_state = 'optimal'
         self.aux_solution_state = 'infeasible'
+        self.lp_m = len(self.A)
+        self.lp_n = len(self.c)
 
 
     def to_equation_tableu_form(self):
@@ -58,7 +60,7 @@ class Linear_Program:
         xb = [eq + [x] for eq, x in zip(self.A, self.b)]
         z = self.c + [0]
         lp_mat = xb + [z]
-        print("LINE 60: debugging print - lp_mat:", lp_mat)
+        #print("LINE 61: debugging print - lp_mat:", lp_mat)
         return lp_mat
 
 
@@ -90,7 +92,7 @@ class Linear_Program:
 
         leaving_i = bounds.index(min(bounds))
         
-        print("#LINE 92: debugging print: current pivot position is", leaving_i, entering_i)
+        #print("#LINE 93: debugging print: current pivot position is", leaving_i, entering_i)
 
         # return: 
         #           leaving_i  - the index of the basic variable to leave the basis.
@@ -163,7 +165,7 @@ class Linear_Program:
 
         self.aux_solution_state == "infeasible"
 
-        print(f"LINE 170: debugging print - auxiliary_tableau: {auxiliary_tableau}")
+        #print(f"LINE 166: debugging print - auxiliary_tableau: {auxiliary_tableau}")
 
         # Step 3:
         #   pivot omega into the basis
@@ -191,16 +193,46 @@ class Linear_Program:
         #   if the objective value is zero we can convert our aux tableu back to its original
         #   LP with the basis of the auxiliary tableu.
         #   otherwise if the objective value is not zero then the original LP is infeasible
-        for eq in omega_in_basis_tableau:
-            print(eq)
+        # for eq in omega_in_basis_tableau:
+        #     print(eq)
 
         if omega_in_basis_tableau[-1][-1] != 0: # or self.aux_solution_state == "unbounded"
-            return False
+            return False, False
         else:
-            return # aux matrix with objective function converted back into original form.
+            return 0, omega_in_basis_tableau
 
 
+    def convert_aux_original(self, auxiliary_tableau):
 
+        # Step 1:
+        #   remove omega
+        for row in range(len(auxiliary_tableau)):
+            auxiliary_tableau[row] = np.delete(auxiliary_tableau[row], -2)
+
+        auxiliary_tableau = np.array(auxiliary_tableau)
+        
+        # Step 2:
+        #   iterate through the coefficients of the objective function
+        #   up to the constant column since we do not need to include the constant value
+        # for var_i in range(len(auxiliary_tableau[-1])-1):
+        for var_i in range(self.lp_n):
+ 
+            # find out what is the difference in coefficients
+            # original: 5x1 + 3x2
+            # currently: 2x1
+            # difference for coeff_x1 = 5-2 = 3
+        
+            dif_aux_original = self.c[var_i] - auxiliary_tableau[-1][var_i]
+            for row in auxiliary_tableau[:-1]:
+                if row[var_i] != 0:
+                    multiplier = dif_aux_original / row[var_i]
+                    new_row = - np.array(row)
+                    new_row[-1] = - new_row[-1]
+                    new_row[var_i] = 0
+                    auxiliary_tableau[-1] += multiplier * new_row
+                    break
+
+        return auxiliary_tableau
 
 
     def solve(self):
@@ -218,15 +250,30 @@ class Linear_Program:
         #   sum(n < 0 for n in nums)
         if not self.can_be_improved(lp_tableu) or sum(n < 0 for n in self.b) > 0:
             # then solve the auxiliary form
-            auxiliary_solution = self.solve_auxiliary(lp_tableu)
+            auxiliary_solution, auxiliary_tableau = self.solve_auxiliary(lp_tableu)
 
+            # check if it is feasible
+            if auxiliary_solution == 0:
+                self.solution_state == 'optimal'
+                lp_tableu = self.convert_aux_original(auxiliary_tableau)
+                print("lp returned from convert_aux: ", lp_tableu)
 
+                while self.can_be_improved(lp_tableu) and self.solution_state == "optimal":
+                    pivot_position = self.pivot_position(lp_tableu)
+                    if self.solution_state != "optimal":
+                        break
+                    lp_tableu = self.pivot_step(pivot_position, lp_tableu)
 
+                for row in lp_tableu:
+                    print(row)
 
-        # check if it is feasible
-        if auxiliary_solution == 0:
-            lp_tableu = self.to_equation_tableu_form()
+                self.result = lp_tableu[-1][-1]
+                self.get_solution(lp_tableu)
 
+            else:
+                self.solution_state = 'infeasible'
+
+        else:
             while self.can_be_improved(lp_tableu) and self.solution_state == "optimal":
                 pivot_position = self.pivot_position(lp_tableu)
                 if self.solution_state != "optimal":
@@ -236,8 +283,12 @@ class Linear_Program:
             self.result = lp_tableu[-1][-1]
             self.get_solution(lp_tableu)
 
-        else:
-            self.solution_state = 'infeasible'
+
+    def display_result(self):
+        print(self.solution_state)
+        if self.solution_state == 'optimal':
+            print(self.result)
+            # print(self.result)
 
 
 ###############################################
@@ -263,8 +314,4 @@ if __name__ == '__main__':
 
     lp = Linear_Program(lp_content)
     lp.solve()
-
-    # print(lp.solution_state)
-    # if lp.solution_state == 'optimal':
-    #     print(lp.result)
-    #     print(lp.solution)
+    lp.display_result()
