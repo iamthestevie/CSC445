@@ -244,7 +244,7 @@ class Linear_Program:
         3. TODO: consider the unbounded scenario
         """
         lp_tableu = self.to_equation_tableu_form()
-   
+
         # check objective function
         #   if it has no positive coefficients or,
         #   it has negative basic variables
@@ -254,7 +254,7 @@ class Linear_Program:
             auxiliary_solution, auxiliary_tableau = self.solve_auxiliary(lp_tableu)
 
             # check if it is feasible
-            if auxiliary_solution == 0:
+            if auxiliary_solution == 0 and auxiliary_tableau != False:
                 self.solution_state == 'optimal'
                 lp_tableu = self.convert_aux_original(auxiliary_tableau)
                 #print("lp returned from convert_aux: ", lp_tableu)
@@ -294,7 +294,7 @@ class Linear_Program:
         print(self.solution_state)
         if self.solution_state == 'optimal':
             print(-self.obj_value)
-            for index in range(self.lp_n-1):
+            for index in range(self.lp_n):
                 print(self.result[index], end=' ')
             print()
 
