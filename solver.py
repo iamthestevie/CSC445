@@ -79,6 +79,7 @@ class Linear_Program:
             # go through all the equations (rows of the matrix) row by row
                 # calculate and then store the constraint
             # find the smallest constraint and return the entering_i, and the row of the constraint (pivot position)
+
         bounds = []
         for eq in lp_mat[:-1]:
             coefficient = eq[entering_i]
@@ -90,7 +91,17 @@ class Linear_Program:
             else:
                 self.aux_solution_state = "unbounded"
 
-        leaving_i = bounds.index(min(bounds))
+        if aux == True:
+            # If omega is in the basis AND it's row's index is the min(bounds) THEN choose 
+            # leaving_i to be the row of omega.
+            omega_in_basis, row = self.omega_in_basis(lp_mat)
+            row = row[0][0]
+            if omega_in_basis and bounds[row] == min(bounds):
+                leaving_i = row
+            else:
+                leaving_i = bounds.index(min(bounds))
+        else:
+            leaving_i = bounds.index(min(bounds))
         
         #print("#LINE 93: debugging print: current pivot position is", leaving_i, entering_i)
 
@@ -116,6 +127,13 @@ class Linear_Program:
 
     def is_pivot(self, column):
         return sum(column) == 1 and len([c for c in column if c == 0]) == len(column) -1
+
+    def omega_in_basis(self, lp_mat):
+        lp_mat_columns = np.array(lp_mat).T
+        if self.is_pivot(lp_mat_columns[-2]):
+            return True, np.where(lp_mat_columns[-2] == 1)
+        else:
+            return False, False
 
 
     def get_solution(self, lp_mat):
@@ -183,7 +201,7 @@ class Linear_Program:
         #   i.e. can it be made to be zero so that our original LP has an initially feasible point
         #   that we can then use to solve it.
 
-        while self.can_be_improved(omega_in_basis_tableau) and self.aux_solution_state == "infeasible":
+        while self.can_be_improved(omega_in_basis_tableau) and self.omega_in_basis(omega_in_basis_tableau) and self.aux_solution_state == "infeasible":
                 pivot_position = self.pivot_position(omega_in_basis_tableau, True)
                 if self.aux_solution_state != "infeasible":
                     break
@@ -203,7 +221,6 @@ class Linear_Program:
 
 
     def convert_aux_original(self, auxiliary_tableau):
-
         # Step 1:
         #   remove omega
         for row in range(len(auxiliary_tableau)):
@@ -223,7 +240,7 @@ class Linear_Program:
             # difference for coeff_x1 = 5-2 = 3
         
             dif_aux_original = self.c[var_i] - auxiliary_tableau[-1][var_i]
-            for row in auxiliary_tableau[:-1]:
+            for row in auxiliary_tableau[:-1]: 
                 if row[var_i] != 0:
                     multiplier = dif_aux_original / row[var_i]
                     new_row = - np.array(row)
@@ -232,7 +249,7 @@ class Linear_Program:
                     auxiliary_tableau[-1] += multiplier * new_row
                     break
 
-        auxiliary_tableau[-1][-1] *= -1            
+        auxiliary_tableau[-1][-1] *= -1       
         return auxiliary_tableau
 
 
@@ -257,17 +274,12 @@ class Linear_Program:
             if auxiliary_solution == 0 and auxiliary_tableau != False:
                 self.solution_state == 'optimal'
                 lp_tableu = self.convert_aux_original(auxiliary_tableau)
-                #print("lp returned from convert_aux: ", lp_tableu)
 
                 while self.can_be_improved(lp_tableu) and self.solution_state == "optimal":
                     pivot_position = self.pivot_position(lp_tableu)
                     if self.solution_state != "optimal":
                         break
                     lp_tableu = self.pivot_step(pivot_position, lp_tableu)
-                    
-                    # for row in lp_tableu:
-                    #     print(row)
-
 
                 self.obj_value = lp_tableu[-1][-1]
                 self.get_solution(lp_tableu)
@@ -277,10 +289,6 @@ class Linear_Program:
 
         else:
             while self.can_be_improved(lp_tableu) and self.solution_state == "optimal":
-
-                # for row in lp_tableu:
-                #         print(row)
-
                 pivot_position = self.pivot_position(lp_tableu)
                 if self.solution_state != "optimal":
                     break
@@ -288,6 +296,8 @@ class Linear_Program:
 
             self.obj_value = lp_tableu[-1][-1]
             self.get_solution(lp_tableu)
+
+        # print(np.array(lp_tableu))
 
     
     def display_result(self):
