@@ -66,7 +66,9 @@ class Linear_Program:
 
     def pivot_position(self, lp_mat, aux=False):
         """
-        returns the pivot position
+        returns the pivot positions: 
+            leaving_i   -> the index of the basic variable to leave the basis
+            entering_i  -> the index of the non-basic variable to enter the basis
         """
         # STEP 1: find the non basic variable that we want to work on
         obj_fun = lp_mat[-1]
@@ -111,6 +113,14 @@ class Linear_Program:
         
 
     def pivot_step(self, pivot_position, lp_mat):
+        """
+        performs a pivot step on an linear program in tableau form given the indices
+            of entering and leaving variables.
+
+        Input:
+            pivot_position  -> a tuple of (leaving index, entering index)
+            lp_mat          -> the LP in tableu form to perform the pivot on
+        """
         new_tableau = [[] for i in range(len(lp_mat))]
         
         i, j = pivot_position
@@ -125,9 +135,25 @@ class Linear_Program:
 
 
     def is_pivot(self, column):
+        """
+        determines whether a variable is in the basis or not
+        Input:
+            column  -> a column of the LP in tableau form
+        Output:
+            True if the column consists of only a single 1 (that variable is in the basis)
+            False if the column does not consist of only a single 1 (that variable is not in the basis)
+        """
         return sum(column) == 1 and len([c for c in column if c == 0]) == len(column) -1
 
     def omega_in_basis(self, lp_mat):
+        """
+        determines whether omega (in the case of an auxiliary problem) is in the basis or not.
+        Input:
+            lp_mat          -> an LP in auxiliary tableau form
+        Output:
+            True, index     -> if omega is in the basis return True and the index of the column of omega
+            False, False    -> if omega is not in the basis return False, False.
+        """
         lp_mat_columns = np.array(lp_mat).T
         if self.is_pivot(lp_mat_columns[-2]):
             return True, np.where(lp_mat_columns[-2] == 1)
@@ -136,6 +162,13 @@ class Linear_Program:
 
 
     def get_solution(self, lp_mat):
+        """
+        returns the values of the variables of an LP in tableau form
+        Input:
+            lp_mat  -> an LP in tableau form
+        output:
+            self.result -> a list of the values of the variables in an LP
+        """
         lp_mat_columns = np.array(lp_mat).T
         
         self.result = []
@@ -158,6 +191,7 @@ class Linear_Program:
 
     def solve_auxiliary(self, lp_mat):
         """
+        solves auxiliary LP problems
         """
         # Step 1:   
         #   create a new aux tableau that will hold all the equations of our old
@@ -220,6 +254,9 @@ class Linear_Program:
 
 
     def convert_aux_original(self, auxiliary_tableau):
+        """
+        converts auxiliary LP's back to their original form
+        """
         # Step 1:
         #   remove omega
         for row in range(len(auxiliary_tableau)):
@@ -308,16 +345,8 @@ class Linear_Program:
             print()
 
 ###############################################
-### Section one: Read in the standard input ###
+### Main: Read in the standard input ###
 ###############################################
-"""
-TODOS:
-   - What are cases we should check?
-   - How do we save?
-   - How do we let the user start and exit from the program?
-   - Maybe these user prompts/instructions shouldn't be added considering the grading schema 
-     (if the only thing auto grader wants is to print is the result).
-"""
 
 if __name__ == '__main__':
     lp_content = []
