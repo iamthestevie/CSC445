@@ -95,9 +95,8 @@ class Linear_Program:
             # If omega is in the basis AND it's row's index is the min(bounds) THEN choose 
             # leaving_i to be the row of omega.
             omega_in_basis, row = self.omega_in_basis(lp_mat)
-            row = row[0][0]
-            if omega_in_basis and bounds[row] == min(bounds):
-                leaving_i = row
+            if omega_in_basis and bounds[row[0][0]] == min(bounds):
+                leaving_i = row[0][0]
             else:
                 leaving_i = bounds.index(min(bounds))
         else:
