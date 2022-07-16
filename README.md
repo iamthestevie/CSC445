@@ -4,12 +4,12 @@ CSC 445 - Linear Programming at University of Victoria - Summer 2022
 Programming Project - LP Solver
 Steve Muir - V00347783
 
-# Compiling and Linking the Project
+# Running the program
 
-Commands ('$' should be seen as an example command prompt):
+In order to run the python script please type the following command (where '$' is the command prompt):
 
-$ make          // Will compile and link the project
+$ python3 solver.py < <input_file_name.txt>
 
-$ make clean    // Will clean up the executable and object files
 
-$ ./lp          // Will run the program after the 'make' command has been successfully run
+ A high level description of the solver architecture (e.g. the type of Simplex implementation
+used, the procedure for resolving initially-infeasible problems, etc.)
